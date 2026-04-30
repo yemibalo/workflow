@@ -1,0 +1,21 @@
+# .github/workflows/ci.yml
+
+name: My First Pipeline        # Name shown in GitHub UI
+
+on:                            # TRIGGER: when does this run?
+  push:
+    branches: [main]           # Only when pushing to main branch
+
+jobs:                          # JOBS: what to run
+  build-and-test:              # Job name (you choose this)
+    runs-on: ubuntu-latest     # RUNNER: use a fresh Ubuntu machine
+
+    steps:                     # STEPS: tasks inside the job
+      - name: Checkout code
+        uses: actions/checkout@v3   # Built-in action to pull your code
+
+      - name: Say hello
+        run: echo "Hello from GitHub Actions!"   # Plain bash command
+
+      - name: Show directory
+        run: ls -la
