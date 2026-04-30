@@ -1,24 +1,53 @@
-# .github/workflows/ci.yml
+name: CI/CD Pipeline
 
-name: My First Pipeline        # Name shown in GitHub UI
-
-on:                            # TRIGGER: when does this run?
+on:
   push:
-    branches: [main]           # Only when pushing to main branch
-  pull_request:                #Also runs on pull request-very important
     branches: [main]
-jobs:                          # JOBS: what to run
-  build-and-test:              # Job name (you choose this)
-    runs-on: ubuntu-latest     # RUNNER: use a fresh Ubuntu machine
+  pull_request:
+    branches: [main]
 
-    steps:                     # STEPS: tasks inside the job
+jobs:
+
+  # Job 1 — Run tests
+  test:
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout code
-        uses: actions/setup-node@v3   # Prebuilt action to install node 
-        with:
-         node-version: '18'           #Cache dependencies= faster runs
-         cache: 'npm'
-      - name: Say hello
-        run: echo "Hello from GitHub Actions!"   # Plain bash command
+        uses: actions/checkout@v3
 
-      - name: Show directory
-        run: ls -la
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  # Job 2 — Build & push Docker image
+  docker:
+    runs-on: ubuntu-latest
+    needs: test                              # only runs if tests pass
+    if: github.ref == 'refs/heads/main'     # only on main, not PRs
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+            ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.sha }}
